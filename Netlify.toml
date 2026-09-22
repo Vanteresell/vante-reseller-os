@@ -1,7 +1,0 @@
-[build]
-  publish = "."
-  functions = "netlify/functions"
-
-[[edge_functions]]
-  function = "subscription-gate"
-  path = "/app.html"
