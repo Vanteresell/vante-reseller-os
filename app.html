@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VANTE Reseller OS — Pro</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Inter,Arial,sans-serif;background:#f5f5f5;color:#111}
+button,input,select{font:inherit}button{cursor:pointer}
+.app{display:flex;min-height:100vh}
+.sidebar{width:245px;background:#111;color:#fff;padding:28px 18px;position:fixed;inset:0 auto 0 0;z-index:5}
+.logo{font-size:25px;font-weight:800;letter-spacing:3px;padding:0 12px 34px}
+.nav{display:flex;flex-direction:column;gap:6px}.nav button{border:0;background:transparent;color:#aaa;text-align:left;padding:13px 14px;border-radius:10px;font-weight:600}.nav button:hover,.nav button.active{background:#252525;color:#fff}
+.main{margin-left:245px;width:calc(100% - 245px);padding:34px;max-width:1500px}
+.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px}.top h1{margin:0;font-size:30px}.date{color:#777;font-size:14px}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:22px}.card{background:#fff;border:1px solid #e8e8e8;border-radius:16px;padding:20px;box-shadow:0 3px 15px #00000008}.label{font-size:13px;color:#777}.value{font-size:27px;font-weight:800;margin-top:9px}
+.grid{display:grid;grid-template-columns:1.3fr .7fr;gap:18px}.panel{background:#fff;border:1px solid #e8e8e8;border-radius:16px;padding:22px;margin-bottom:18px}.panel h2{font-size:18px;margin:0 0 18px}
+table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:13px 10px;border-bottom:1px solid #eee;font-size:14px}th{color:#777;font-size:12px;text-transform:uppercase}
+.form{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}.form input,.form select{width:100%;padding:12px;border:1px solid #ddd;border-radius:9px;background:#fff;outline:none}.form input:focus,.form select:focus{border-color:#111}
+.btn{border:0;background:#111;color:#fff;padding:12px 16px;border-radius:9px;font-weight:700}.btn.secondary{background:#eee;color:#111}.btn.danger{background:#eee;color:#b00000;padding:8px 11px}
+.actions{display:flex;gap:8px;flex-wrap:wrap}.empty{padding:28px;text-align:center;color:#888}
+.statline{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #eee}.muted{color:#777}
+.hidden{display:none}.notice{background:#111;color:#fff;border-radius:13px;padding:17px;margin-bottom:18px}
+.calc{display:grid;grid-template-columns:1fr 1fr;gap:18px}.result{font-size:32px;font-weight:800}
+.mobileMenu{display:none}
+@media(max-width:900px){.sidebar{transform:translateX(-100%);transition:.2s}.sidebar.open{transform:translateX(0)}.main{margin-left:0;width:100%;padding:20px}.mobileMenu{display:block;border:0;background:#111;color:#fff;border-radius:9px;padding:10px 13px}.cards{grid-template-columns:repeat(2,1fr)}.grid,.calc{grid-template-columns:1fr}.form{grid-template-columns:1fr 1fr}}
+@media(max-width:550px){.cards{grid-template-columns:1fr 1fr}.cards .value{font-size:21px}.form{grid-template-columns:1fr}.top h1{font-size:24px}table{min-width:650px}.panel{overflow-x:auto}.panel h2{white-space:nowrap}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar" id="sidebar">
+<div class="logo">VANTE</div><button class="btn secondary" style="margin:0 12px 18px;width:calc(100% - 24px)" onclick="fetch('/\.netlify/functions/logout',{method:'POST'}).then(()=>location.href='/')">Log out</button>
+<nav class="nav">
+<button class="active" onclick="show('dashboard',this)">⌂ &nbsp; Dashboard</button>
+<button onclick="show('products',this)">▣ &nbsp; Products</button>
+<button onclick="show('sales',this)">↗ &nbsp; Sales</button>
+<button onclick="show('expenses',this)">− &nbsp; Expenses</button>
+<button onclick="show('calculator',this)">⌕ &nbsp; Calculator</button>
+<button onclick="show('analytics',this)">◫ &nbsp; Analytics</button>
+<button onclick="show('goals',this)">◎ &nbsp; Goals</button>
+<button onclick="show('settings',this)">⚙ &nbsp; Settings</button>
+</nav>
+</aside>
+
+<main class="main">
+<div class="top"><div style="display:flex;gap:12px;align-items:center"><button class="mobileMenu" onclick="toggleMenu()">☰</button><h1 id="title">Dashboard</h1></div><div class="date" id="date"></div></div>
+
+<section id="dashboard">
+<div class="notice"><b>VANTE Reseller OS</b><br><span style="color:#bbb">Track products, sales, expenses and profit in one place.</span></div>
+<div class="cards">
+<div class="card"><div class="label">Revenue</div><div class="value" id="revenue">€0.00</div></div>
+<div class="card"><div class="label">Profit</div><div class="value" id="profit">€0.00</div></div>
+<div class="card"><div class="label">Margin</div><div class="value" id="margin">0%</div></div>
+<div class="card"><div class="label">Products</div><div class="value" id="productCount">0</div></div>
+</div>
+<div class="grid"><div class="panel"><h2>Recent Sales</h2><div id="recentSales"></div></div><div class="panel"><h2>Business Snapshot</h2><div class="statline"><span>Inventory value</span><b id="inventory">€0.00</b></div><div class="statline"><span>Expenses</span><b id="expenseTotal">€0.00</b></div><div class="statline"><span>Low stock</span><b id="lowStock">0</b></div></div></div>
+</section>
+
+<section id="products" class="hidden">
+<div class="panel"><h2>Add Product</h2><div class="form"><input id="pName" placeholder="Product name"><input id="pBuy" type="number" step=".01" placeholder="Purchase price"><input id="pSell" type="number" step=".01" placeholder="Sale price"><input id="pStock" type="number" placeholder="Stock"><input id="pPlatform" placeholder="Platform (Vinted, eBay...)"><button class="btn" onclick="addProduct()">Add Product</button></div></div>
+<div class="panel"><h2>Products</h2><div id="productsTable"></div></div>
+</section>
+
+<section id="sales" class="hidden">
+<div class="panel"><h2>Record Sale</h2><div class="form"><select id="sProduct"><option value="">Choose product</option></select><input id="sPrice" type="number" step=".01" placeholder="Sale price"><input id="sFees" type="number" step=".01" placeholder="Fees"><input id="sShip" type="number" step=".01" placeholder="Shipping"><button class="btn" onclick="addSale()">Add Sale</button></div></div>
+<div class="panel"><h2>Sales</h2><div id="salesTable"></div></div>
+</section>
+
+<section id="expenses" class="hidden">
+<div class="panel"><h2>Add Expense</h2><div class="form"><input id="eDesc" placeholder="Description"><input id="eAmount" type="number" step=".01" placeholder="Amount"><button class="btn" onclick="addExpense()">Add Expense</button></div></div>
+<div class="panel"><h2>Expenses</h2><div id="expensesTable"></div></div>
+</section>
+
+<section id="calculator" class="hidden">
+<div class="calc"><div class="panel"><h2>Profit Calculator</h2><div class="form" style="grid-template-columns:1fr"><input id="cBuy" type="number" step=".01" placeholder="Purchase price"><input id="cSell" type="number" step=".01" placeholder="Sale price"><input id="cFees" type="number" step=".01" placeholder="Fees"><input id="cShip" type="number" step=".01" placeholder="Shipping"><button class="btn" onclick="calculate()">Calculate</button></div></div><div class="panel"><h2>Result</h2><div class="muted">Profit</div><div class="result" id="calcResult">€0.00</div><div class="statline"><span>Margin</span><b id="calcMargin">0%</b></div><div class="statline"><span>ROI</span><b id="calcROI">0%</b></div></div></div>
+</section>
+
+<section id="analytics" class="hidden"><div class="panel"><h2>Analytics</h2><div class="cards"><div class="card"><div class="label">Average sale</div><div class="value" id="avgSale">€0.00</div></div><div class="card"><div class="label">Total sales</div><div class="value" id="saleCount">0</div></div></div><div class="statline"><span>Revenue</span><b id="aRevenue">€0.00</b></div><div class="statline"><span>Profit</span><b id="aProfit">€0.00</b></div></div></section>
+
+<section id="goals" class="hidden">
+<div class="panel"><h2>Monthly Goal</h2><div class="form"><input id="goalAmount" type="number" step=".01" placeholder="Target profit (€)"><button class="btn" onclick="saveGoal()">Save Goal</button></div><div class="statline"><span>Goal</span><b id="goalValue">€0.00</b></div><div class="statline"><span>Current profit</span><b id="goalCurrent">€0.00</b></div><div class="statline"><span>Progress</span><b id="goalProgress">0%</b></div></div>
+</section>
+
+<section id="settings" class="hidden"><div class="panel"><h2>Settings</h2><p class="muted">Your data is stored locally in this browser.</p><div class="actions"><button class="btn secondary" onclick="exportData()">Export data</button><button class="btn danger" onclick="resetData()">Reset all data</button></div></div></section>
+</main></div>
+
+<script>
+const KEY='vante_reseller_os_v2';
+let data=JSON.parse(localStorage.getItem(KEY)||'{"products":[],"sales":[],"expenses":[],"goal":0}');
+const money=n=>'€'+Number(n||0).toFixed(2);
+const save=()=>{localStorage.setItem(KEY,JSON.stringify(data));render()};
+function show(id,btn){document.querySelectorAll('main section').forEach(s=>s.classList.add('hidden'));document.getElementById(id).classList.remove('hidden');document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));if(btn)btn.classList.add('active');document.getElementById('title').textContent=btn?btn.textContent.replace(/^[^A-Za-z]+/,'').trim():id;document.getElementById('sidebar').classList.remove('open');render()}
+function toggleMenu(){document.getElementById('sidebar').classList.toggle('open')}
+function addProduct(){let name=pName.value.trim();if(!name)return alert('Product name fehlt.');data.products.push({id:Date.now(),name,buy:+pBuy.value||0,sell:+pSell.value||0,stock:+pStock.value||0,platform:pPlatform.value||'-'});[pName,pBuy,pSell,pStock,pPlatform].forEach(x=>x.value='');save()}
+function addSale(){let p=data.products.find(x=>x.id==sProduct.value);if(!p)return alert('Produkt auswählen.');let price=+sPrice.value||0,fees=+sFees.value||0,ship=+sShip.value||0;data.sales.push({id:Date.now(),product:p.name,buy:p.buy,price,fees,ship,profit:price-p.buy-fees-ship,date:new Date().toLocaleDateString('de-DE')});if(p.stock>0)p.stock--;[sProduct,sPrice,sFees,sShip].forEach(x=>x.value='');save()}
+function addExpense(){if(!eDesc.value)return;data.expenses.push({id:Date.now(),desc:eDesc.value,amount:+eAmount.value||0});eDesc.value='';eAmount.value='';save()}
+function del(type,id){data[type]=data[type].filter(x=>x.id!=id);save()}
+function calculate(){let buy=+cBuy.value||0,sell=+cSell.value||0,fees=+cFees.value||0,ship=+cShip.value||0,p=sell-buy-fees-ship;calcResult.textContent=money(p);calcMargin.textContent=(sell?p/sell*100:0).toFixed(1)+'%';calcROI.textContent=(buy?p/buy*100:0).toFixed(1)+'%'}
+function saveGoal(){data.goal=+goalAmount.value||0;save()}
+function render(){
+ let rev=data.sales.reduce((a,x)=>a+x.price,0), prof=data.sales.reduce((a,x)=>a+x.profit,0), exp=data.expenses.reduce((a,x)=>a+x.amount,0), inv=data.products.reduce((a,x)=>a+x.buy*x.stock,0);
+ revenue.textContent=money(rev);profit.textContent=money(prof-exp);margin.textContent=(rev?((prof-exp)/rev*100):0).toFixed(1)+'%';productCount.textContent=data.products.length;inventory.textContent=money(inv);expenseTotal.textContent=money(exp);lowStock.textContent=data.products.filter(x=>x.stock<=2).length;
+ recentSales.innerHTML=data.sales.length?'<table><tr><th>Product</th><th>Price</th><th>Profit</th></tr>'+data.sales.slice(-5).reverse().map(x=>`<tr><td>${esc(x.product)}</td><td>${money(x.price)}</td><td>${money(x.profit)}</td></tr>`).join('')+'</table>':'<div class="empty">Noch keine Verkäufe.</div>';
+ productsTable.innerHTML=data.products.length?'<table><tr><th>Product</th><th>Buy</th><th>Sell</th><th>Stock</th><th>Platform</th><th></th></tr>'+data.products.map(x=>`<tr><td>${esc(x.name)}</td><td>${money(x.buy)}</td><td>${money(x.sell)}</td><td>${x.stock}</td><td>${esc(x.platform)}</td><td><button class="btn danger" onclick="del('products',${x.id})">Delete</button></td></tr>`).join('')+'</table>':'<div class="empty">Noch keine Produkte.</div>';
+ sProduct.innerHTML='<option value="">Choose product</option>'+data.products.map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join('');
+ salesTable.innerHTML=data.sales.length?'<table><tr><th>Date</th><th>Product</th><th>Sale</th><th>Profit</th><th></th></tr>'+data.sales.slice().reverse().map(x=>`<tr><td>${x.date}</td><td>${esc(x.product)}</td><td>${money(x.price)}</td><td>${money(x.profit)}</td><td><button class="btn danger" onclick="del('sales',${x.id})">Delete</button></td></tr>`).join('')+'</table>':'<div class="empty">Noch keine Verkäufe.</div>';
+ expensesTable.innerHTML=data.expenses.length?'<table><tr><th>Description</th><th>Amount</th><th></th></tr>'+data.expenses.map(x=>`<tr><td>${esc(x.desc)}</td><td>${money(x.amount)}</td><td><button class="btn danger" onclick="del('expenses',${x.id})">Delete</button></td></tr>`).join('')+'</table>':'<div class="empty">Noch keine Ausgaben.</div>';
+ let avg=data.sales.length?rev/data.sales.length:0;avgSale.textContent=money(avg);saleCount.textContent=data.sales.length;aRevenue.textContent=money(rev);aProfit.textContent=money(prof-exp);goalValue.textContent=money(data.goal);goalCurrent.textContent=money(prof-exp);goalProgress.textContent=(data.goal?Math.min(100,(prof-exp)/data.goal*100):0).toFixed(0)+'%';
+}
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function exportData(){let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));a.download='vante-reseller-os-data.json';a.click()}
+function resetData(){if(confirm('Wirklich alle Daten löschen?')){data={products:[],sales:[],expenses:[],goal:0};save()}}
+date.textContent=new Date().toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long',year:'numeric'});render();
+</script>
+</body>
+</html>
